@@ -21,6 +21,11 @@ RUN NODE_ENV=development npm ci --ignore-scripts
 # Copy full source
 COPY . .
 
+# Regenerate source-attribution manifest so it matches the current source tree.
+# This is required because the committed manifest can be stale relative to the
+# fork's source (hosts added/removed since last --write run).
+RUN node scripts/source-attribution.mjs --write
+
 # Generate inventory facts first (required by build-handlers)
 RUN node scripts/generate-inventory-facts.mjs
 
