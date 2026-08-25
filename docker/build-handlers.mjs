@@ -3,7 +3,7 @@
  * can discover and load them without the app's full dependency graph.
  *
  * Two passes:
- *   1. TypeScript handlers (api/**/*.ts) → bundled .js at same path
+ *   1. TypeScript handlers under api/ subdirectories → bundled .js at same path
  *   2. Plain JS handlers (api/*.js root level) → bundled in-place to inline npm deps
  *
  * Build-generated runtime artifacts may remain external when they must be
