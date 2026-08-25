@@ -21,17 +21,19 @@ RUN NODE_ENV=development npm ci --ignore-scripts
 # Copy full source
 COPY . .
 
-# Regenerate source-attribution manifest so it matches the current source tree.
-# This is required because the committed manifest can be stale relative to the
-# fork's source (hosts added/removed since last --write run).
+# Compile TypeScript API handlers → self-contained ESM bundles
+# Output is api/**/*.js alongside the source .ts files.
+# Must run BEFORE source-attribution --write because the compiled bundles land
+# in api/ and the scanner (SOURCE_ROOTS includes 'api') picks up URLs from them.
+RUN node docker/build-handlers.mjs
+
+# Regenerate source-attribution manifest against the fully-built source tree
+# (including compiled api/ bundles). Running after build-handlers prevents the
+# manifest from being stale when build-crawlable-corpus validates it.
 RUN node scripts/source-attribution.mjs --write
 
-# Generate inventory facts first (required by build-handlers)
+# Generate inventory facts (reads the freshly-written manifest)
 RUN node scripts/generate-inventory-facts.mjs
-
-# Compile TypeScript API handlers → self-contained ESM bundles
-# Output is api/**/*.js alongside the source .ts files
-RUN node docker/build-handlers.mjs
 
 # Build the crawlable static corpus and Vite frontend (outputs to dist/)
 # Skip blog build — blog-site has its own deps not installed here
