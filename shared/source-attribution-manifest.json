@@ -5805,15 +5805,10 @@
       "host": "maps.worldmonitor.app",
       "provider": "maps.worldmonitor.app",
       "kind": "structured",
-      "observed": true,
+      "observed": false,
       "license": "Excluded: first-party, control-plane, UI, or rendering transport",
       "attribution": "Excluded from the external-provider count: not an ingested upstream dataset.",
-      "status": "excluded",
-      "references": [
-        {
-          "path": "src/services/country-geometry.ts"
-        }
-      ]
+      "status": "excluded"
     },
     {
       "host": "mapservices.weather.noaa.gov",
@@ -7162,13 +7157,7 @@
       "status": "excluded",
       "references": [
         {
-          "path": "api/widget-agent.ts"
-        },
-        {
           "path": "scripts/seed-security-advisories.mjs"
-        },
-        {
-          "path": "src/utils/proxy.ts"
         }
       ]
     },
