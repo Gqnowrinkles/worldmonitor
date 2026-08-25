@@ -19,6 +19,9 @@ RUN npm ci --ignore-scripts
 # Copy full source
 COPY . .
 
+# Generate inventory facts first (required by build-handlers)
+RUN node scripts/generate-inventory-facts.mjs
+
 # Compile TypeScript API handlers → self-contained ESM bundles
 # Output is api/**/*.js alongside the source .ts files
 RUN node docker/build-handlers.mjs
