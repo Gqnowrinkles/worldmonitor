@@ -13,8 +13,10 @@ FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432
 WORKDIR /app
 
 # Install root dependencies (layer-cached until package.json changes)
+# Override NODE_ENV so devDependencies are included — they're required by the
+# build scripts (tsx, vite, tsc, etc.) even when Coolify sets NODE_ENV=production.
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN NODE_ENV=development npm ci --ignore-scripts
 
 # Copy full source
 COPY . .

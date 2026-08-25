@@ -51,7 +51,8 @@ installLcpAttributionDebug();
 // the actual SDK load via requestIdleCallback. The init options + SDK ship in
 // the deferred sentry-*.js chunk, not the main entry.
 installPreInitErrorQueue();
-scheduleSentryInit();
+// SANITIZED (fork): author error-telemetry (Sentry) off unless explicitly opted in.
+if (import.meta.env.VITE_ENABLE_TELEMETRY === 'true') scheduleSentryInit();
 
 // Report field INP attribution to Sentry (through the deferred-Sentry queue) so
 // we can see which real interaction is slow and whether the cost is input delay,
@@ -494,9 +495,13 @@ if (capturedContentAttribution) {
   // reload does not duplicate the landing handoff.
   trackContentHandoff();
 }
-void initAnalytics();
-initVercelAnalytics();
-initDebugBearRum();
+// SANITIZED (fork): Umami (abacus.worldmonitor.app), Vercel Analytics, and
+// DebugBear RUM phone-home are OFF unless VITE_ENABLE_TELEMETRY=true.
+if (import.meta.env.VITE_ENABLE_TELEMETRY === 'true') {
+  void initAnalytics();
+  initVercelAnalytics();
+  initDebugBearRum();
+}
 
 // Initialize dynamic meta tags for sharing
 initMetaTags();
