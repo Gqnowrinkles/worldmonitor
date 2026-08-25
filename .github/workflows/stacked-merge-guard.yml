@@ -4,8 +4,8 @@ name: Stacked Merge Guard
 # the root Docker builder on PR heads so the same build-order failures Coolify
 # would hit are discovered before merge rather than after main changes.
 #
-# Pushes to main keep the lightweight structural/stacked checks only; the full
-# builder already ran on the PR head and need not be repeated in this workflow.
+# Pushes to main keep the lightweight structural/source-contract checks only;
+# the full builder already ran on the PR head and need not be repeated here.
 
 on:
   pull_request:
@@ -32,8 +32,8 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Guard Docker handler build structure
-        run: node --test tests/build-handlers-syntax.test.mjs
+      - name: Guard Docker build source contracts
+        run: node --test tests/build-handlers-syntax.test.mjs tests/source-origin-catalog.test.mjs
 
       - name: Root Docker builder completes
         if: github.event_name == 'pull_request'
