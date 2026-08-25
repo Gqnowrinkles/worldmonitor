@@ -1,10 +1,13 @@
 /**
- * Compiles all API handlers into self-contained ESM bundles so the
- * local-api-server.mjs sidecar can discover and load them without node_modules.
+ * Compiles API handlers into ESM bundles so the local-api-server.mjs sidecar
+ * can discover and load them without the app's full dependency graph.
  *
  * Two passes:
- *   1. TypeScript handlers (api/**\/*.ts) → bundled .js at same path
+ *   1. TypeScript handlers (api/**/*.ts) → bundled .js at same path
  *   2. Plain JS handlers (api/*.js root level) → bundled in-place to inline npm deps
+ *
+ * Build-generated runtime artifacts may remain external when they must be
+ * produced after handler compilation.
  *
  * Run: node docker/build-handlers.mjs
  */
@@ -17,6 +20,17 @@ import path from 'node:path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 const apiRoot = path.join(projectRoot, 'api');
+
+// Inventory facts intentionally do not exist yet when Docker compiles handlers:
+// they are generated only after source-attribution scans the compiled api/
+// bundles. Keep this module external so esbuild does not create a circular
+// dependency (build-handlers -> inventory generation -> source attribution ->
+// build-handlers) or inline stale pre-attribution counts into product-catalog.
+// The final image copies the generated module alongside api/product-catalog.js,
+// so Node resolves this import at runtime from the same directory.
+const runtimeGeneratedExternals = [
+  path.join(apiRoot, '_inventory-facts.generated.js'),
+];
 
 // ── Pass 1: TypeScript handlers in subdirectories ─────────────────────────
 async function findTsHandlers(dir) {
@@ -74,6 +88,7 @@ async function compileHandlers(handlers, label) {
         target: 'node20',
         treeShaking: true,
         allowOverwrite: true,
+        external: runtimeGeneratedExternals,
         loader: { '.ts': 'ts' },
       });
       const { size } = await stat(outfile);
