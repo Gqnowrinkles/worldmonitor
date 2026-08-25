@@ -9,8 +9,8 @@ The previous dependency-cycle fix correctly made `_inventory-facts.generated.js`
 ## Goals
 
 1. Keep repository source under `api/` byte-for-byte unchanged during Docker handler compilation.
-2. Produce the same runtime handler tree in a separate build directory.
-3. Let source attribution inspect both pristine source and compiled runtime bundles.
+2. Produce the runtime handler tree in a separate build directory.
+3. Let the existing source-attribution walker inspect both pristine source and compiled runtime bundles without changing its policy surface.
 4. Generate inventory facts from pristine source after attribution has been refreshed.
 5. Ensure the generated inventory module is present beside the compiled `product-catalog.js` runtime bundle.
 6. Make the root Docker builder path a required pre-merge CI check so Coolify does not discover builder-order failures after merge.
@@ -18,33 +18,36 @@ The previous dependency-cycle fix correctly made `_inventory-facts.generated.js`
 ## Non-goals
 
 - No changes to API behavior, pricing, auth, billing, or production data.
-- No source-attribution policy changes beyond including an optional build output tree when present.
+- No source-attribution policy change.
 - No change to Coolify configuration is required for this fix.
 - Do not weaken `docs-stats` parsers to accept esbuild output.
 
 ## Architecture
 
-`docker/build-handlers.mjs` will create `build/api` as the runtime API tree. It will first copy the complete pristine `api/` tree into `build/api`, preserving helper modules and any non-code assets. It will then compile TypeScript handlers and root-level JavaScript handlers from `api/` and write their outputs to matching paths under `build/api` instead of overwriting source.
+`docker/build-handlers.mjs` creates `build/api` as the runtime API tree. It first copies the complete pristine `api/` tree into `build/api`, preserving helper modules and non-code assets. It then compiles TypeScript handlers and root-level JavaScript handlers from `api/` and writes their outputs to matching paths under `build/api` instead of overwriting source.
 
-The build-generated inventory import remains external by import specifier so `build/api/product-catalog.js` retains `./_inventory-facts.generated.js`. After `scripts/source-attribution.mjs --write` and `scripts/generate-inventory-facts.mjs` complete against pristine source, Docker copies `api/_inventory-facts.generated.js` into `build/api/_inventory-facts.generated.js`.
+The build-generated inventory import remains external by import specifier so `build/api/product-catalog.js` retains `./_inventory-facts.generated.js` even though the output directory moved.
 
-`scripts/source-attribution.mjs` will add `build/api` to `SOURCE_ROOTS`. Its existing missing-directory-tolerant walker means normal source-only checks are unchanged when `build/api` does not exist. During Docker builds, attribution will see compiled bundle URLs as well as pristine source.
+The source-attribution walker already scans `api/` recursively, while `docs-stats` excludes dot-prefixed top-level API entries from its endpoint count and reads its source contracts from exact non-hidden paths. `build-handlers` therefore mirrors the completed runtime tree to `api/.runtime-scan`. Attribution sees compiled-bundle URL evidence through that hidden mirror, while source parsers continue reading pristine `api/bootstrap.js`, `api/health.js`, and other source files. The mirror is build-only and is removed before TypeScript/Vite compilation.
 
-The final Docker stage will copy `/app/build/api` rather than `/app/api` into the runtime image.
+After `scripts/source-attribution.mjs --write` and `scripts/generate-inventory-facts.mjs` complete against this stable tree, Docker copies `api/_inventory-facts.generated.js` into `build/api/_inventory-facts.generated.js`.
+
+The final Docker stage copies `/app/build/api` rather than `/app/api` into the runtime image.
 
 ## Data flow
 
 1. `COPY . .` leaves repository source pristine.
-2. `node docker/build-handlers.mjs` copies `api/` to `build/api` and overlays compiled handler bundles there.
-3. `node scripts/source-attribution.mjs --write` scans `scripts`, `server`, `api`, `src`, and optional `build/api`.
+2. `node docker/build-handlers.mjs` copies `api/` to `build/api`, overlays compiled handler bundles there, and mirrors that runtime tree to `api/.runtime-scan` for attribution only.
+3. `node scripts/source-attribution.mjs --write` scans its normal roots; recursive `api/` traversal naturally includes `api/.runtime-scan`.
 4. `node scripts/generate-inventory-facts.mjs` parses pristine source and writes generated inventory outputs under the normal source paths.
 5. Docker copies `api/_inventory-facts.generated.js` to `build/api/_inventory-facts.generated.js`.
-6. Crawlable corpus, TypeScript, and Vite builds run.
-7. Final image copies `build/api` to `/app/api`.
+6. Crawlable/content corpus validation runs while the attribution mirror remains present.
+7. Docker removes `api/.runtime-scan`, then TypeScript and Vite build.
+8. Final image copies `build/api` to `/app/api`.
 
 ## Failure handling
 
-- `build/api` is rebuilt from scratch each handler-build run to prevent stale artifacts.
+- `build/api` and `api/.runtime-scan` are rebuilt from scratch each handler-build run to prevent stale artifacts.
 - Any copy or esbuild failure exits nonzero.
 - Inventory generation remains fail-closed.
 - Source attribution remains fail-closed for real manifest errors.
@@ -52,8 +55,8 @@ The final Docker stage will copy `/app/build/api` rather than `/app/api` into th
 
 ## Tests
 
-1. Add a focused regression test proving handler compilation targets `build/api` and leaves source `api/bootstrap.js` unchanged.
-2. Verify generated runtime `product-catalog.js` keeps the inventory module as a relative external import.
-3. Verify source attribution tolerates absent `build/api` and scans it when present through existing scanner behavior.
-4. Run the actual root Docker builder in CI.
-5. Verify the final PR diff does not alter runtime API semantics beyond build paths.
+1. A focused regression test requires handler compilation to target `build/api` rather than source entrypoints.
+2. Node syntax-checks `docker/build-handlers.mjs` before Docker executes it.
+3. The actual root Docker builder runs in the required PR safety gate.
+4. The Docker builder verifies source attribution, inventory generation, corpus generation, TypeScript, and Vite in the same order Coolify uses.
+5. Final PR review verifies no runtime API semantic change beyond build paths and generated-artifact placement.
