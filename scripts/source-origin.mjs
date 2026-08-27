@@ -184,6 +184,7 @@ const HOST_ORIGINS = Object.freeze({
   'api.cloudflare.com': 'US',
   'api.abuseipdb.com': 'US',
   'api.alternative.me': null,
+  'aviationstack.com': 'GB',
   'api.aviationstack.com': 'GB',
   'api.coingecko.com': 'MY',
   'api.coinpaprika.com': 'PL',

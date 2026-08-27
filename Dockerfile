@@ -2,8 +2,8 @@
 # World Monitor — Docker Image
 # =============================================================================
 # Multi-stage build:
-#   builder       — installs deps, compiles TS handlers, builds Vite frontend
-#   runtime-deps  — installs only packages needed by unbundled raw JS handlers
+#   builder       — installs deps, compiles runtime handlers, builds frontend
+#   runtime-deps  — installs only packages needed by runtime handler helpers
 #   final         — nginx (static) + node (API) under supervisord
 # =============================================================================
 
@@ -21,23 +21,31 @@ RUN NODE_ENV=development npm ci --ignore-scripts
 # Copy full source
 COPY . .
 
-# Compile TypeScript API handlers → self-contained ESM bundles
-# Output is api/**/*.js alongside the source .ts files.
-# Must run BEFORE source-attribution --write because the compiled bundles land
-# in api/ and the scanner (SOURCE_ROOTS includes 'api') picks up URLs from them.
+# Build a complete runtime API tree under build/api without modifying source.
+# build-handlers also mirrors that compiled tree under api/.runtime-scan: the
+# existing attribution walker recursively scans api/, while docs-stats ignores
+# dot-prefixed top-level API entries and continues parsing pristine source files.
 RUN node docker/build-handlers.mjs
 
-# Regenerate source-attribution manifest against the fully-built source tree
-# (including compiled api/ bundles). Running after build-handlers prevents the
-# manifest from being stale when build-crawlable-corpus validates it.
+# Regenerate source attribution while both pristine source and the hidden
+# compiled-bundle mirror are visible. This preserves the previous requirement
+# that URLs introduced by bundling are part of attribution evidence.
 RUN node scripts/source-attribution.mjs --write
 
-# Generate inventory facts (reads the freshly-written manifest)
-RUN node scripts/generate-inventory-facts.mjs
+# Generate inventory facts from pristine source and the freshly-written
+# attribution ledger, then place the runtime-generated module beside the
+# compiled product-catalog handler that imports it.
+RUN node scripts/generate-inventory-facts.mjs && \
+    cp api/_inventory-facts.generated.js build/api/_inventory-facts.generated.js
 
-# Build the crawlable static corpus and Vite frontend (outputs to dist/)
-# Skip blog build — blog-site has its own deps not installed here
-RUN npm run build:crawlable-corpus && npm run build:content-corpus && npx tsc && npx vite build
+# Build crawlable/content artifacts while the attribution mirror is still
+# present, then remove that build-only mirror before TypeScript/Vite compilation.
+# Skip blog build — blog-site has its own deps not installed here.
+RUN npm run build:crawlable-corpus && \
+    npm run build:content-corpus && \
+    rm -rf api/.runtime-scan && \
+    npx tsc && \
+    npx vite build
 
 # ── Stage 2: Runtime dependencies ───────────────────────────────────────────
 FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd AS runtime-deps
@@ -45,10 +53,8 @@ FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432
 WORKDIR /app
 
 # Keep the runtime dependency set deliberately smaller than the app's full
-# production graph. The raw api/*.js handlers are not bundled by
-# docker/build-handlers.mjs, so they still need these package imports at
-# runtime, but the frontend/server-only production deps do not belong in the
-# final image.
+# production graph. Runtime helper modules copied into build/api can still
+# contain package imports even though handler entrypoints themselves are bundled.
 COPY docker/runtime-package.json ./package.json
 COPY docker/runtime-package-lock.json ./package-lock.json
 RUN npm ci --omit=dev --omit=optional --ignore-scripts
@@ -68,14 +74,12 @@ WORKDIR /app
 COPY --from=builder /app/src-tauri/sidecar/local-api-server.mjs ./local-api-server.mjs
 COPY --from=builder /app/src-tauri/sidecar/package.json ./package.json
 
-# Minimal runtime node_modules — required by raw .js handlers that aren't
-# bundled by build-handlers.mjs. Without this the Node sidecar dispatches
-# those routes, fails to resolve package imports like @upstash/ratelimit,
-# and returns 502 "missing dependency".
+# Minimal runtime node_modules required by unbundled helper modules in the
+# isolated runtime API tree.
 COPY --from=runtime-deps /app/node_modules ./node_modules
 
-# API handler modules (JS originals + compiled TS bundles)
-COPY --from=builder /app/api ./api
+# API runtime tree: pristine helper/assets copy plus compiled handler overlays.
+COPY --from=builder /app/build/api ./api
 
 # Static data files used by handlers at runtime
 COPY --from=builder /app/data ./data
