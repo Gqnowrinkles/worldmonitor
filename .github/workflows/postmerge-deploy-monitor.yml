@@ -5,19 +5,14 @@ name: Post-merge Deploy Monitor
 # Convex Deploy and Deploy Railway Reconcile Control run on push to main and
 # are outside the deploy gate's required list (they are post-merge, so they
 # cannot gate the PR that causes them). Both failed on main while main stayed
-# green (#6232, #6325/#6326). This scheduled monitor reads each monitored
-# workflow's run history on main and fails loudly when the newest run did not
-# deploy.
+# green (#6232, #6325/#6326). This monitor reads each monitored workflow's run
+# history on main and fails loudly when the newest run did not deploy.
 #
-# Deliberately NOT gated on a green main (unlike seed-freshness-monitor.yml)
-# and NOT wired into the deploy gate: the deploys this checks are post-merge,
-# and the incidents it exists to catch had green main while the deploy failed —
-# gating on main would silence exactly the alarms we want (#5565, the same
-# reasoning analytics-collector-monitor.yml documents).
+# This downstream fork does not inherit upstream production deployment history,
+# so scheduled execution produces permanent false alarms. Keep the monitor
+# available for explicit operator runs without generating recurring failures.
 
 on:
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 permissions:
