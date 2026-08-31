@@ -1,8 +1,10 @@
 name: Railway Native Deploy Health
 
+# This downstream fork does not have the upstream Railway production viewer
+# configuration. Scheduled execution therefore produces permanent false alarms.
+# Keep the monitor available for an explicit operator run after configuring
+# RAILWAY_PRODUCTION_VIEWER_API_TOKEN and RAILWAY_PROJECT_ID.
 on:
-  schedule:
-    - cron: '17 */6 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -22,49 +24,15 @@ jobs:
       name: ingestion-acceptance-production
       deployment: false
     steps:
-      - name: Check Railway monitor configuration
-        id: config
-        env:
-          RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_PRODUCTION_VIEWER_API_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          missing=()
-          if [ -z "${RAILWAY_API_TOKEN:-}" ]; then
-            missing+=("RAILWAY_PRODUCTION_VIEWER_API_TOKEN")
-          fi
-          if [ -z "${RAILWAY_PROJECT_ID:-}" ]; then
-            missing+=("RAILWAY_PROJECT_ID")
-          fi
-          if [ "${#missing[@]}" -gt 0 ]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=Railway monitor not configured::Missing required GitHub Actions configuration: ${missing[*]}"
-            {
-              echo "## Railway Native Deploy Health"
-              echo
-              echo "Scheduled monitor skipped because required GitHub Actions configuration is missing."
-              echo
-              for item in "${missing[@]}"; do
-                echo "- \`$item\`"
-              done
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          echo "configured=true" >> "$GITHUB_OUTPUT"
-
       - name: Start deploy-health run budget
-        if: steps.config.outputs.configured == 'true'
         run: echo "RAILWAY_DRIFT_JOB_STARTED_AT_MS=$(date +%s%3N)" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        if: steps.config.outputs.configured == 'true'
         with:
           fetch-depth: 0
           filter: blob:none
 
       - name: Freeze comparison head and fetch main ancestry
-        if: steps.config.outputs.configured == 'true'
         run: |
           checked_out="$(git rev-parse HEAD)"
           if [ "$checked_out" != "$GITHUB_SHA" ]; then
@@ -75,16 +43,13 @@ jobs:
           git fetch --quiet origin +refs/heads/main:refs/remotes/origin/main
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        if: steps.config.outputs.configured == 'true'
         with:
           node-version: '24'
 
       - name: Install pinned Railway CLI
-        if: steps.config.outputs.configured == 'true'
         run: npm install --global @railway/cli@5.30.1
 
       - name: Check Railway deployment configuration and drift
-        if: steps.config.outputs.configured == 'true'
         env:
           RAILWAY_API_TOKEN: ${{ secrets.RAILWAY_PRODUCTION_VIEWER_API_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
