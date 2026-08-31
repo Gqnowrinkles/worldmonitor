@@ -1,8 +1,10 @@
 name: Umami Storage Monitor
 
+# This downstream fork does not have the upstream Railway production token or
+# project configuration. Scheduled execution therefore produces permanent false
+# alarms every 15 minutes. Keep the monitor available for an explicit operator
+# run after configuring RAILWAY_PRODUCTION_TOKEN and RAILWAY_PROJECT_ID.
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 concurrency:
