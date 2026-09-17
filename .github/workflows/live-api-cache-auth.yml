@@ -69,7 +69,7 @@ permissions:
 
 jobs:
   sweep:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     # ~23 requests x 15s worst-case per-request timeout (LIVE_API_CACHE_TIMEOUT_MS)
     # is a ~6min absolute ceiling, plus ~1min checkout/setup-node. Nominal runs
     # finish in under 5s.

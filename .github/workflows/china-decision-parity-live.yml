@@ -83,7 +83,7 @@ permissions:
 
 jobs:
   probe:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     # Two requests at a 15s per-request ceiling, plus checkout/setup-node.
     timeout-minutes: 5
     steps:
