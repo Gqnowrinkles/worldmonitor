@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   proto-breaking:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         # buf compares the checked-out proto tree with the main baseline.
@@ -38,7 +38,7 @@ jobs:
 
   proto-freshness:
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 

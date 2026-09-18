@@ -34,7 +34,7 @@ permissions:
 jobs:
   admission:
     name: cancel-safe admission
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 3
     concurrency:
       group: >-
@@ -99,7 +99,7 @@ jobs:
     name: non-mutating preview
     needs: admission
     if: needs.admission.outputs.eligible == 'true' && needs.admission.outputs.dry_run == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 13
     environment:
       name: ingestion-acceptance-production-verification
@@ -129,7 +129,7 @@ jobs:
       needs.admission.outputs.eligible == 'true'
       && needs.admission.outputs.dry_run != 'true'
       && vars.RAILWAY_RECONCILE_CUTOVER_ACTIVE == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 13
     environment:
       name: ingestion-acceptance-production
@@ -234,7 +234,7 @@ jobs:
     name: terminal exact-head verifier
     needs: [admission, mutation]
     if: always() && needs.mutation.outputs.manifest_ready == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 50
     environment:
       name: ingestion-acceptance-production-verification
@@ -290,7 +290,7 @@ jobs:
       && needs.admission.result == 'success'
       && needs.admission.outputs.dry_run != 'true'
       && needs.verifier.result != 'success'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
