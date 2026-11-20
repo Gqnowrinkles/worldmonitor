@@ -25,7 +25,7 @@ permissions: {}
 jobs:
   reject_non_main:
     if: github.ref != 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     permissions: {}
     steps:
       - name: Reject non-main watchdog invocation
@@ -35,7 +35,7 @@ jobs:
 
   classify:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 10
     environment:
       name: ingestion-acceptance-production-watchdog
@@ -87,7 +87,7 @@ jobs:
     name: Dispatch authorized recovery
     needs: classify
     if: github.ref == 'refs/heads/main' && github.run_attempt == 1 && needs.classify.outputs.dispatch_authorized == 'true' && vars.RAILWAY_RECONCILE_CUTOVER_ACTIVE == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
     permissions:
       actions: write
@@ -134,7 +134,7 @@ jobs:
       && needs.dispatch.result == 'success'
       && (needs.dispatch.outputs.outcome == 'PRE_DISPATCH_NOT_STARTED'
         || needs.dispatch.outputs.outcome == 'DISPATCH_CONFIRMED_REJECTED')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
     environment:
       name: ingestion-acceptance-production-watchdog
@@ -173,7 +173,7 @@ jobs:
       github.ref == 'refs/heads/main'
       && needs.dispatch.outputs.outcome == 'RECOVERY_DISPATCH_ACCEPTED'
       && vars.RAILWAY_RECONCILE_CUTOVER_ACTIVE == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
     environment:
       name: ingestion-acceptance-production-watchdog

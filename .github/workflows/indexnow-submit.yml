@@ -25,7 +25,7 @@ jobs:
         github.event.deployment.environment == 'Production' &&
         github.event.deployment.creator.login == 'vercel[bot]'
       )
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     # Seven hosts are now submitted sequentially rather than two; each request
     # carries its own 15s deadline (REQUEST_TIMEOUT_MS), so this bounds a stuck
     # run rather than being the only thing that ever stops one.

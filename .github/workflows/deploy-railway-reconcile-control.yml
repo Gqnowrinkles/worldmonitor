@@ -23,7 +23,7 @@ concurrency:
 jobs:
   unit-test:
     name: Unit tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 15
     defaults:
       run:
@@ -44,7 +44,7 @@ jobs:
     name: Wrangler deploy
     needs: [unit-test]
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 15
     environment:
       name: railway-reconcile-control-production
@@ -153,7 +153,7 @@ jobs:
   live-smoke:
     name: Live control-plane smoke
     needs: [deploy]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 3
     steps:
       - name: Verify exact deployed Worker version

@@ -41,7 +41,7 @@ permissions:
 jobs:
   reject_non_main:
     if: github.ref != 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     permissions: {}
     steps:
       - name: Reject non-main recovery invocation
@@ -52,7 +52,7 @@ jobs:
   proof:
     name: Read-only recovery proof
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 45
     environment:
       name: ingestion-acceptance-production-verification
@@ -99,7 +99,7 @@ jobs:
     name: Protected operator resolution
     needs: [proof]
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 45
     # This environment is a main-only secret boundary with no required reviewer.
     # For a single operator, self-review adds no independent authorization and
@@ -156,7 +156,7 @@ jobs:
     name: Dispatch ordinary lease-aware retry
     needs: [resolve]
     if: github.ref == 'refs/heads/main' && github.run_attempt == 1 && needs.resolve.outputs.dispatch_authorized == 'true' && vars.RAILWAY_RECONCILE_CUTOVER_ACTIVE == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
     permissions:
       actions: write
@@ -202,7 +202,7 @@ jobs:
       && needs.dispatch-retry.result == 'success'
       && (needs.dispatch-retry.outputs.outcome == 'PRE_DISPATCH_NOT_STARTED'
         || needs.dispatch-retry.outputs.outcome == 'DISPATCH_CONFIRMED_REJECTED')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
     environment:
       name: ingestion-acceptance-production-watchdog
@@ -238,7 +238,7 @@ jobs:
     name: Bind exact dispatched run to recovery hold
     needs: [resolve, dispatch-retry]
     if: github.ref == 'refs/heads/main' && needs.dispatch-retry.outputs.outcome == 'RECOVERY_DISPATCH_ACCEPTED' && vars.RAILWAY_RECONCILE_CUTOVER_ACTIVE == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 5
     environment:
       name: ingestion-acceptance-production-watchdog

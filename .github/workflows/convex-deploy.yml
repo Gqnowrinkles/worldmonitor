@@ -41,7 +41,7 @@ jobs:
     # test.yml's there. Not gated itself — deploy-gate.yml only aggregates Test,
     # Typecheck, Lint Code, Security Audit and Stacked Merge Guard.
     name: convex-changes
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     outputs:
       convex: ${{ steps.diff.outputs.convex }}
     steps:
@@ -94,7 +94,7 @@ jobs:
   deploy:
     needs: changes
     if: needs.changes.outputs.convex == 'true'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
