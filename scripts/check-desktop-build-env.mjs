@@ -49,6 +49,7 @@ export const EXCLUDED_DESKTOP_BUILD_ENV = {
   VITE_TAURI_API_BASE_URL: 'dev-only override; default is correct in builds',
   VITE_TAURI_REMOTE_API_BASE_URL: 'dev-only override; default is correct in builds',
   VITE_SENTRY_DSN: 'desktop telemetry deliberately unset today; revisit with #1942 diagnostics',
+  VITE_ENABLE_TELEMETRY: 'fork-wide Sentry opt-in flag; desktop telemetry stays off unless explicitly enabled',
   VITE_DODO_ENVIRONMENT: 'dormant checkout overlay; desktop checkout flow is #5911',
   VITE_PMTILES_URL: 'web proxy URL; desktop uses VITE_PMTILES_URL_PUBLIC (direct R2)',
   VITE_CLOUD_PREFS_ENABLED: 'cloud prefs sync is fully disabled on desktop (cloud-prefs-sync.ts)',

@@ -9,8 +9,10 @@ v1 bridge covers.
 
 ## The contract (v1, observation form)
 
-One object per geo-anchored raw observation (`derived: false` — riskIndex and
-hypotheses belong to the OMEGA brain, not the ingestion layer):
+One object per geo-anchored observation, aligned with the canonical JSON Schema
+committed at `schemas/intelligence_contract_v1.json` (byte-identical copy of
+KnockAI/Omega PR #7's `schemas/intelligence_contract_v1.json`; provenance and
+sha256 asserted in `tests/observation-contract-schema.test.mjs`):
 
 ```json
 {
@@ -24,15 +26,71 @@ hypotheses belong to the OMEGA brain, not the ingestion layer):
   },
   "classification": "SYNTHETIC|LIVE",
   "signals": [ { "id": "…", "type": "…", "value": …, "unit": "…", "derived": false, "observedAt": "…" } ],
+  "riskIndex": { "value": null, "calibrationState": "UNCALIBRATED", "confidence": 0, "semantics": "heuristic" },
+  "hypotheses": [],
   "gaps": ["…"]
 }
 ```
 
+### Raw vs derived signals (the split)
+
+The canonical schema requires every `signals[].value` to be a finite number
+and carries an explicit `derived` flag per signal:
+
+- **RAW (`derived: false`)** — direct feed-measured facts, forwarded verbatim:
+  a presence signal (value 1 — the feed carries exactly one such record for
+  this target after dedup; a missing record is the absence of the
+  observation, never a zero-valued signal) and the verbatim AIS numbers
+  (SOG/COG/true heading/AIS ship-type code) with ITU-R M.1371
+  not-available sentinels filtered into gaps.
+- **DERIVED (`derived: true`)** — numeric intelligence normalized beyond a
+  direct measurement, with the ladder pinned in the module: CAP severity
+  `{Unknown:0, Minor:1, Moderate:2, Severe:3, Extreme:4}`, CAP urgency
+  `{Past/Unknown:0, Future:1, Expected:2, Immediate:3}`, CAP certainty
+  `{Unknown/Unlikely:0, Possible:1, Likely:2, Observed:3}`, and the Radar
+  outage scope ladder `{PARTIAL:1, MAJOR:2, TOTAL:3}`. A category outside
+  the ladder emits no rank signal (fail-closed gap note) — never a
+  fabricated rank.
+- **Categorical identity** (event names, VTEC codes, outage type/cause,
+  country) is text, not a number: it rides `target.label` and
+  `provenance.evidenceRefs`, never a string-valued signal.
+
+### Point-in-time ordering (fail-closed)
+
+`observedAt <= ingestedAt <= asOf` on every emitted observation:
+
+- `asOf` defaults to `ingestedAt` (the observation set is valid as of
+  ingestion); an explicit `asOf` before `ingestedAt` fails the whole feed
+  closed to `UNAVAILABLE`.
+- Records whose own measurement timestamp postdates ingestion (AIS position
+  report timestamp, outage `detectedAt`) are dropped into `skipped` with the
+  violation as the reason.
+- Weather alert `onset`/`expires` are event timing, not observation timing: a
+  warning issued now for a storm starting tomorrow is observed now. The
+  observedAt anchor chain is onset (when already past) → seed `fetchedAt`
+  (when the fabric observed the alert) → `ingestedAt`, each fallback recorded
+  as a gap. A future onset therefore never manufactures an ordering violation.
+
+### Risk index and hypotheses (brain-side, schema-required)
+
+The canonical schema requires `riskIndex` and `hypotheses` on every payload,
+so observations carry the brain-neutral form — `riskIndex { value: null,
+calibrationState: "UNCALIBRATED", confidence: 0, semantics: "heuristic" }`
+(exactly the canonical Python consumer's default factory) and `hypotheses: []`
+— plus a gap documenting the deferral. The OMEGA brain replaces both when it
+composes an intelligence response; the ingestion layer never invents a risk
+value. This is the documented observation-form subset: everything else
+validates against the full canonical schema
+(`tests/observation-contract-schema.test.mjs`).
+
 Implementation: `scripts/_observation-contract.mjs`. Tests:
-`tests/observation-contract.test.mjs` against committed fixtures in
-`tests/fixtures/observation-contract/` (weather + AIS captured live from the production
-fabric on the OMEGA box 2026-11-20; outages built from the seeder's exact record
-construction because the prod key had expired at capture time).
+`tests/observation-contract.test.mjs` (behavioral: raw/derived split,
+ordering boundaries, fail-closed skips) and
+`tests/observation-contract-schema.test.mjs` (canonical-schema compatibility)
+against committed fixtures in `tests/fixtures/observation-contract/` (weather
+and AIS captured live from the production fabric on the OMEGA box 2026-11-20;
+outages built from the seeder's exact record construction because the prod key
+had expired at capture time).
 
 ### H3 resolution choices
 
@@ -45,15 +103,16 @@ construction because the prod key had expired at capture time).
 ### Normalizer behavior (all three)
 
 - Takes the existing fabric payload shape (seed-envelope aware via
-  `unwrapEnvelope`; `asOf` prefers `_seed.fetchedAt`, else the relay snapshot
-  timestamp, else ingestion time).
+  `unwrapEnvelope`; `asOf` defaults to ingestion time — the seed
+  `fetchedAt` and the relay snapshot build time are preserved as
+  evidenceRefs, not claimed as the answer's point-in-time).
 - Emits `rightsState: 'REVIEW'` on every observation; `authorization.outcome:
   'ALLOWED'` records the internal-use basis (CEO production GO 2026-11-15) only.
   Nothing is integrated into commercial scoring.
 - `classification: 'LIVE'` by default; `'SYNTHETIC'` only in fixtures/tests.
 - Fail-closed: unknown payload shape → `availability.state: 'UNAVAILABLE'` with
-  detail, zero observations. Records that cannot be geo-anchored or attributed are
-  reported in `skipped`, never fabricated.
+  detail, zero observations. Records that cannot be geo-anchored, attributed,
+  or point-in-time ordered are reported in `skipped`, never fabricated.
 - AIS not-available sentinels (SOG 102.3 kn, COG 360°, heading 511°) become gap
   notes, not measurements.
 
@@ -98,3 +157,31 @@ memory.
 | Aviation (OpenSky/adsb.lol) | OpenSky credentials absent on the prod relay (`/opensky` 503) — no cleanly capturable payload today. |
 | GPSJam | Already H3-keyed aggregate grids; ingestion is a res-remap, deferred until the brain's cell-resolution expectations are fixed. |
 | Markets, news, conflicts, cameras | Not geo-instant observations (markets) or already covered by dedicated rights-gated paths (cameras) or creds-gated (UCDP/ACLED). |
+
+## Review corrections (2026-11-20, REDTEAM follow-up)
+
+Four corrections landed on the same branch after the REDTEAM review:
+
+1. **Raw vs derived split.** `signals[].derived` is now caller-owned and
+   honest: presence + verbatim AIS measurements are `derived: false`; severity/
+   urgency/certainty/outage-scope ordinal ranks are `derived: true` with the
+   ladders pinned in the module header and this audit. Categorical identity
+   (event, VTEC, outage type/cause) rides `target.label` +
+   `evidenceRefs — the canonical schema only allows numeric signal values.
+2. **Point-in-time ordering.** `observedAt <= ingestedAt <= asOf` enforced on
+   every emitted observation, fail-closed (see above). Boundary tests included
+   (equality allowed; one millisecond over drops the record or the feed).
+3. **OMEGA consumer compatibility.** `schemas/intelligence_contract_v1.json`
+   is a committed byte-identical copy of the canonical schema from
+   KnockAI/Omega PR #7 (head `6c7e906a`, blob `e7696a45`, sha256 asserted in
+   test). `tests/observation-contract-schema.test.mjs` validates every
+   normalizer output for every fixture against it via ajv (already a pinned
+   devDependency) with negative controls proving the validator bites, plus the
+   documented observation-form subset for the brain-side `riskIndex`/
+   `hypotheses` fields. No duplicate pipelines, no rights changes.
+4. **CI runner.** The two red checks (`changes`, `typecheck-changes`) failed
+   only because the fork's `knock/main` pinned these workflows to the
+   self-hosted `omega-vps-runner`, which lacks the `gh` CLI (exit 127). The
+   PR moves the Test/Typecheck/Lint Code workflow jobs back to GitHub-hosted
+   `ubuntu-latest` runners — the repo is public (free minutes) and no
+   production infrastructure is touched.

@@ -8,9 +8,14 @@ on:
 permissions:
   contents: read
 
+# CI runs on GitHub-hosted runners: the fork's self-hosted omega-vps-runner
+# lacks the gh CLI, so the `changes` diff steps (and every job queued behind
+# them) failed with exit 127 on every PR since 2026-09-18. The repo is
+# public, so GitHub-hosted minutes are free; restoring the pre-pin runner
+# keeps the required checks green without touching the runner itself.
 jobs:
   changes:
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     permissions:
       pull-requests: read
     outputs:
@@ -189,7 +194,7 @@ jobs:
     # semantic documentation contracts. Runs on every PR/push (docs-only PRs
     # set changes.code=false and skip `unit`, so this must not gate on it).
     # Pure Node builtins — no npm install required.
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -207,7 +212,7 @@ jobs:
   unit:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -335,7 +340,7 @@ jobs:
   consumer-prices:
     needs: changes
     if: needs.changes.outputs.consumer_prices == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -350,7 +355,7 @@ jobs:
   umami-postgres:
     needs: changes
     if: needs.changes.outputs.umami == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
       postgres:
@@ -391,7 +396,7 @@ jobs:
   sidecar:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -413,7 +418,7 @@ jobs:
   desktop-config:
     needs: changes
     if: needs.changes.outputs.desktop_config == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -477,7 +482,7 @@ jobs:
   desktop-rust:
     needs: changes
     if: needs.changes.outputs.desktop_rust == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -512,7 +517,7 @@ jobs:
   convex-tests:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -530,7 +535,7 @@ jobs:
   dom-tests:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -548,7 +553,7 @@ jobs:
   variant-smoke-full:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     # No secrets are injected here. The smoke allows provider-level
     # unavailable/stale states and gates app-level boot, variant, 401,
     # page-error, and expected-panel invariants.
@@ -694,7 +699,7 @@ jobs:
   resilience-validation-smoke:
     needs: changes
     if: needs.changes.outputs.validation == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -708,7 +713,7 @@ jobs:
   digest-image:
     needs: changes
     if: needs.changes.outputs.digest == 'true'
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     # docker build with the warm runner cache typically lands in ~90s.
     # 20min cap catches base-image-pull stalls, npm-registry flakes, and
     # native-dep compile failures without letting one bad PR check block
