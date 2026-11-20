@@ -1,0 +1,185 @@
+{
+  "sequence": 19,
+  "timestamp": "2026-11-20T18:53:17.380Z",
+  "status": {
+    "connected": true,
+    "currentPositionReady": true,
+    "vessels": 3637,
+    "messages": 5673,
+    "clients": 0,
+    "droppedMessages": 0
+  },
+  "disruptions": [
+    {
+      "id": "chokepoint-cape-of-good-hope",
+      "name": "Cape of Good Hope",
+      "type": "chokepoint_congestion",
+      "lat": -34.36,
+      "lon": 18.49,
+      "severity": "elevated",
+      "changePct": 5,
+      "windowHours": 1,
+      "vesselCount": 21,
+      "region": "Cape of Good Hope",
+      "description": "21 vessels in Cape of Good Hope"
+    },
+    {
+      "id": "chokepoint-gibraltar-strait",
+      "name": "Gibraltar Strait",
+      "type": "chokepoint_congestion",
+      "lat": 35.96,
+      "lon": -5.35,
+      "severity": "high",
+      "changePct": 130,
+      "windowHours": 1,
+      "vesselCount": 23,
+      "region": "Gibraltar Strait",
+      "description": "23 vessels in Gibraltar Strait"
+    },
+    {
+      "id": "chokepoint-dover-strait",
+      "name": "Dover Strait",
+      "type": "chokepoint_congestion",
+      "lat": 51.05,
+      "lon": 1.45,
+      "severity": "low",
+      "changePct": 0,
+      "windowHours": 1,
+      "vesselCount": 5,
+      "region": "Dover Strait",
+      "description": "5 vessels in Dover Strait"
+    }
+  ],
+  "density": [
+    {
+      "id": "density-50,4",
+      "name": "Zone 50,4",
+      "lat": 51,
+      "lon": 5,
+      "intensity": 1,
+      "deltaPct": 0,
+      "shipsPerDay": 21840,
+      "note": "High traffic area"
+    },
+    {
+      "id": "density-52,4",
+      "name": "Zone 52,4",
+      "lat": 53,
+      "lon": 5,
+      "intensity": 0.9924923726621173,
+      "deltaPct": 0,
+      "shipsPerDay": 20832,
+      "note": "High traffic area"
+    },
+    {
+      "id": "density-52,8",
+      "name": "Zone 52,8",
+      "lat": 53,
+      "lon": 9,
+      "intensity": 0.8061708631763536,
+      "deltaPct": 0,
+      "shipsPerDay": 6432,
+      "note": "High traffic area"
+    }
+  ],
+  "candidateReports": [
+    {
+      "mmsi": "630001267",
+      "name": "JINHUA 11           ",
+      "lat": 35.60061666666666,
+      "lon": 139.96191666666667,
+      "heading": 4,
+      "speed": 0.7,
+      "course": 141.8,
+      "timestamp": 1795200798312
+    },
+    {
+      "mmsi": "219005941",
+      "name": "R223 BUSTER         ",
+      "lat": 56.12705833333334,
+      "lon": 12.309656666666665,
+      "heading": 272,
+      "speed": 0,
+      "course": 65.6,
+      "timestamp": 1795200798310
+    },
+    {
+      "mmsi": "311001777",
+      "name": "BTG LOGAN",
+      "lat": 49.28925666666667,
+      "lon": -123.078715,
+      "heading": 180,
+      "speed": 0,
+      "course": 23.4,
+      "timestamp": 1795200798153
+    }
+  ],
+  "tankerReports": [
+    {
+      "mmsi": "265061000",
+      "name": "FURE VICTORIA",
+      "lat": 57.535575,
+      "lon": 11.651919999999999,
+      "shipType": 80,
+      "heading": 0,
+      "speed": 4,
+      "course": 358.4,
+      "timestamp": 1795200788794
+    },
+    {
+      "mmsi": "256992000",
+      "name": "AA-D",
+      "lat": 36.15148,
+      "lon": -5.394735,
+      "shipType": 80,
+      "heading": 352,
+      "speed": 7.2,
+      "course": 352.3,
+      "timestamp": 1795200785146
+    },
+    {
+      "mmsi": "256480000",
+      "name": "M/T RED DIAMOND",
+      "lat": 36.12716,
+      "lon": -5.409491666666667,
+      "shipType": 80,
+      "heading": 167,
+      "speed": 0.1,
+      "course": 95.4,
+      "timestamp": 1795200783059
+    },
+    {
+      "mmsi": "215703000",
+      "name": "SERENA M",
+      "lat": 38.74989166666667,
+      "lon": -9.936566666666666,
+      "shipType": 82,
+      "heading": 354,
+      "speed": 11.1,
+      "course": 357.4,
+      "timestamp": 1795200765978
+    },
+    {
+      "mmsi": "636022881",
+      "name": "SEA LA BELLE",
+      "lat": 36.71120666666666,
+      "lon": 34.73649833333333,
+      "shipType": 80,
+      "heading": 192,
+      "speed": 0,
+      "course": 20,
+      "timestamp": 1795200762257
+    },
+    {
+      "mmsi": "259360000",
+      "name": "KEY SUND",
+      "lat": 55.63563,
+      "lon": 13.024395,
+      "shipType": 89,
+      "heading": 262,
+      "speed": 0,
+      "course": 133.8,
+      "timestamp": 1795200739928
+    }
+  ]
+}
