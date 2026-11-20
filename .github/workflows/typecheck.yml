@@ -8,11 +8,13 @@ on:
 permissions:
   contents: read
 
-# CI runs on GitHub-hosted runners: the fork's self-hosted omega-vps-runner
-# lacks the gh CLI, so the `changes` diff steps (and every job queued behind
-# them) failed with exit 127 on every PR since 2026-09-18. The repo is
-# public, so GitHub-hosted minutes are free; restoring the pre-pin runner
-# keeps the required checks green without touching the runner itself.
+# CI runs on GitHub-hosted runners, pinned to ubuntu-24.04: the fork's
+# self-hosted omega-vps-runner lacks the gh CLI, so the `changes` diff steps
+# (and every job queued behind them) failed with exit 127 on every PR since
+# 2026-09-18, and `ubuntu-latest` now resolves to Ubuntu 26.04, which the
+# pinned Playwright does not support. The repo is public, so GitHub-hosted
+# minutes are free; the pinned label keeps the required checks green without
+# touching the runner itself or chasing latest-image drift.
 jobs:
   changes:
     # Distinct check-run name: test.yml and lint-code.yml each define a job with
@@ -21,7 +23,7 @@ jobs:
     # failures behind it (#5822). The job id stays `changes` so `needs: changes`
     # below keeps resolving; only the published check-run name changes.
     name: typecheck-changes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: read
     outputs:
@@ -44,7 +46,7 @@ jobs:
     # No secrets needed — run for all PRs including forks
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
