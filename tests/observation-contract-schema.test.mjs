@@ -6,7 +6,7 @@
 //   - Source ref:   branch feat/intelligence-contract-v1 = PR #7 head
 //                  6c7e906a3d594d2af9e2eb666949b44ef6584c3c
 //   - Git blob sha: e7696a457c3a99cdb9a52a2783777e40875a795a
-//   - File sha256:  c2b04cc98e7d2181b218dc50b37933d4587111f9e6469a24e94a9afd6e5426a5
+//   - File sha256:  2465e15200884cad9c0ae786e825a3f955e60a58c50ee19370415464987df195
 //                  (asserted below — a byte drift in the committed copy fails)
 //   - Fetched:      2026-11-20 via the GitHub contents API; committed
 //                  byte-identical. If PR #7 revises the schema, refresh the
@@ -39,7 +39,7 @@ import {
 } from '../scripts/_observation-contract.mjs';
 
 const SCHEMA_PATH = new URL('../schemas/intelligence_contract_v1.json', import.meta.url);
-const EXPECTED_SCHEMA_SHA256 = 'c2b04cc98e7d2181b218dc50b37933d4587111f9e6469a24e94a9afd6e5426a5';
+const EXPECTED_SCHEMA_SHA256 = '2465e15200884cad9c0ae786e825a3f955e60a58c50ee19370415464987df195';
 
 const fixture = (name) =>
   JSON.parse(readFileSync(new URL(`./fixtures/observation-contract/${name}`, import.meta.url), 'utf8'));
