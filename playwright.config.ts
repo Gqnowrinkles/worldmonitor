@@ -106,7 +106,11 @@ export default defineConfig({
           args: [
             '--use-angle=swiftshader',
             '--use-gl=swiftshader',
-            ...(requireWebMcp && !webMcpProduction ? ['--enable-features=WebMCPTesting'] : []),
+            // Both WebMCP feature names, comma-separated: Chrome 157 renamed
+            // the testing feature to plain "WebMCP" (document.modelContext
+            // verified live under it); "WebMCPTesting" covers older milestones.
+            // Unknown names are ignored, so one list serves both.
+            ...(requireWebMcp && !webMcpProduction ? ['--enable-features=WebMCP,WebMCPTesting'] : []),
           ],
         },
       },

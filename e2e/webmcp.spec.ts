@@ -46,7 +46,13 @@ test.describe('top-level WebMCP dashboard contract', () => {
         annotations: tool.annotations ?? {},
         description: tool.description,
         name: tool.name,
-        schema: tool.inputSchema ? JSON.parse(tool.inputSchema) : null,
+        // Chrome 157's WebMCP exposes inputSchema as an object; older
+        // milestones serialized it as a JSON string. Accept both.
+        schema: tool.inputSchema
+          ? typeof tool.inputSchema === 'string'
+            ? JSON.parse(tool.inputSchema)
+            : tool.inputSchema
+          : null,
         title: tool.title,
       }));
     });
@@ -76,6 +82,20 @@ test.describe('top-level WebMCP dashboard contract', () => {
       if (!provider || typeof provider.executeTool !== 'function') {
         throw new Error('Chrome WebMCP execution API is unavailable.');
       }
+      // Chrome 157's executeTool takes the input as an OBJECT; older
+      // milestones took a JSON string. Object first, string fallback.
+      const execTool = (tool: WebMCP.RegisteredTool, input: unknown) =>
+        (provider as unknown as {
+          executeTool(t: WebMCP.RegisteredTool, i: unknown): Promise<unknown>;
+        }).executeTool(tool, input).catch((error: unknown) => {
+          // Only the signature mismatch (string-input milestones) retries.
+          if (typeof input !== 'string' && String(error).includes('parameter 2 is not of type')) {
+            return (provider as unknown as {
+              executeTool(t: WebMCP.RegisteredTool, i: string): Promise<unknown>;
+            }).executeTool(tool, JSON.stringify(input ?? {}));
+          }
+          throw error;
+        });
       const parseOutput = (value: unknown): unknown => {
         if (typeof value !== 'string') return value;
         try {
@@ -90,11 +110,8 @@ test.describe('top-level WebMCP dashboard contract', () => {
       const panelTool = byName.get('open_dashboard_panel');
       if (!contextTool || !panelTool) throw new Error('Expected dashboard tools were not discovered.');
 
-      const context = parseOutput(await provider.executeTool(contextTool, '{}'));
-      const denied = parseOutput(await provider.executeTool(
-        panelTool,
-        JSON.stringify({ panelId: 'stock-analysis' }),
-      ));
+      const context = parseOutput(await execTool(contextTool, {}));
+      const denied = parseOutput(await execTool(panelTool, { panelId: 'stock-analysis' }));
       return { context, denied };
     });
 
@@ -193,6 +210,23 @@ test.describe('top-level WebMCP dashboard contract', () => {
       };
 
       const provider = document.modelContext as ExecutableModelContext;
+      // Chrome 157's ModelContext.executeTool takes the input as an OBJECT;
+      // older milestones took a JSON string. Try object first, fall back to
+      // the string form — a signature TypeError is thrown before any tool
+      // execution, so the fallback cannot double-execute.
+      const execTool = (tool: WebMCP.RegisteredTool, input: unknown, options?: { signal?: AbortSignal }) =>
+        provider.executeTool(tool as never, input as never, options as never).catch((error: unknown) => {
+          // Only the signature mismatch (string-input milestones) retries —
+          // AbortError and tool errors must propagate untouched.
+          if (typeof input !== 'string' && String(error).includes('parameter 2 is not of type')) {
+            return provider.executeTool(
+              tool as never,
+              JSON.stringify(input ?? {}) as never,
+              options as never,
+            );
+          }
+          throw error;
+        });
       const tools = await provider.getTools();
       const byName = new Map(tools.map((tool) => [tool.name, tool]));
       const contextTool = byName.get('get_dashboard_context');
@@ -200,13 +234,13 @@ test.describe('top-level WebMCP dashboard contract', () => {
       const tool = byName.get(cancelName);
       if (!contextTool || !tool) throw new Error(`${cancelName} was not discovered.`);
 
-      const before = parseOutput(await provider.executeTool(contextTool, '{}')) as {
+      const before = parseOutput(await execTool(contextTool, {})) as {
         map?: { view?: string; zoom?: number };
       };
       const controller = new AbortController();
-      const execution = provider.executeTool(
+      const execution = execTool(
         tool,
-        useReadOnly ? '{}' : JSON.stringify({ view: 'eu', zoom: 4 }),
+        useReadOnly ? {} : { view: 'eu', zoom: 4 },
         { signal: controller.signal },
       );
       controller.abort();
@@ -222,7 +256,7 @@ test.describe('top-level WebMCP dashboard contract', () => {
       }
       const after = useReadOnly
         ? null
-        : parseOutput(await provider.executeTool(contextTool, '{}')) as {
+        : parseOutput(await execTool(contextTool, {})) as {
           map?: { view?: string; zoom?: number };
         };
       return {
