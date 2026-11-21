@@ -401,7 +401,10 @@ describe('seed freshness workflow control plane', () => {
       workflow.concurrency,
       { group: 'seed-freshness-monitor', 'cancel-in-progress': false },
     );
-    assert.equal(workflow.on.schedule[0].cron, '*/15 * * * *');
+    // a66598992 made the fork's monitors manual-only: no upstream production
+    // deployment history means scheduled grading pages on dead pipelines.
+    assert.ok(!workflow.on.schedule, 'fork posture: no schedule (a66598992)');
+    assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
     assert.doesNotMatch(
       workflowSource,
       /Railway|RAILWAY_|railway-deploy|audit-railway-watch-paths|check-railway-deploy-drift|@railway\/cli/i,

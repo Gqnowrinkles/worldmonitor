@@ -1240,12 +1240,14 @@ describe('scheduled seed freshness monitor', () => {
     const on = parsed.on ?? parsed[true];
     assert.ok(on, 'workflow must declare triggers');
     const triggers = Array.isArray(on) ? on : Object.keys(on);
+    // a66598992 made the fork's monitors manual-only: no upstream production
+    // deployment history means scheduled grading pages on dead pipelines.
     assert.deepEqual(
       [...triggers].sort(),
-      ['schedule', 'workflow_dispatch'],
-      'the monitor must run only on a schedule or an explicit manual dispatch',
+      ['workflow_dispatch'],
+      'the fork monitor must run only on an explicit manual dispatch',
     );
-    assert.equal(on.schedule[0].cron, '*/15 * * * *');
+    assert.ok(!on.schedule, 'fork posture: no schedule (a66598992)');
     assert.match(workflow, /actions\/setup-node@[a-f0-9]+/);
     assert.match(workflow, /node-version:\s*['"]24['"]/);
     assert.match(workflow, /context\s*==\s*"gate"/);

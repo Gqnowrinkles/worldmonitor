@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/KnockAI/Omega/main/schemas/intelligence_contract_v1.json",
+  "title": "OMEGA Intelligence Contract v1",
+  "description": "Versioned, read-only OMEGA intelligence response contract. Canonical implementation: scoring/app/intelligence_contract.py (KnockAI/Omega). Read-only: it describes intelligence; it never fetches, scores, persists, or serves. Version policy: consumers MUST reject any payload whose contractVersion is not exactly 1 (a v2 payload is a different contract); producers that add or change fields MUST bump the version. Unknown fields are rejected everywhere (additionalProperties: false). Cross-field invariants (enforced by the Python implementation; JSON Schema cannot express them): (1) ingestedAt >= observedAt; (2) asOf >= ingestedAt (point-in-time, no post-asOf ingestion); (2b) every signals[].observedAt satisfies observedAt <= asOf — point-in-time discipline is per-signal: no signal may be observed after the response's asOf; (3) availability.state == BLOCKED_BY_RIGHTS iff provenance.authorization.outcome == DENIED; (4) riskIndex.calibrationState == CALIBRATED iff riskIndex.semantics == calibrated_forecast (UNCALIBRATED iff heuristic), and CALIBRATED is constructible only with genuine residual evidence — the canonical bridges accept a closed set of calibration descriptors ('uncalibrated_heuristic', 'residual_backed' for derived signals, requiring non-empty finite residuals for the latter) and reject unknown or malformed calibration metadata fail-closed; (5) availability.state == AVAILABLE requires signals.length >= 1 and riskIndex.value != null; (6) every hypotheses[].verified is false — impact hypotheses are never presented as verified in v1. A missing value never becomes a measured zero (absent metrics appear in gaps, not as 0-valued signals).",
+  "type": "object",
+  "properties": {
+    "contractVersion": {
+      "const": 1,
+      "description": "Contract version. Exactly 1 for this schema; consumers must fail closed on any other value."
+    },
+    "target": {
+      "type": "object",
+      "description": "Geographic target of the intelligence response.",
+      "properties": {
+        "h3Cell": {
+          "type": "string",
+          "pattern": "^8[0-9a-f]{14}$",
+          "description": "H3 cell index (15-char hex, any resolution; the leading 8 encodes H3 cell mode)."
+        },
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lng": { "type": "number", "minimum": -180, "maximum": 180 },
+        "label": { "type": "string", "minLength": 1, "description": "Human-readable target label, e.g. a city name." }
+      },
+      "required": ["h3Cell", "lat", "lng", "label"],
+      "additionalProperties": false
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp of the underlying observation (timezone required)."
+    },
+    "ingestedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 timestamp the observation entered OMEGA (timezone required); must not precede observedAt."
+    },
+    "asOf": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Point-in-time the answer is valid for; the response carries no data ingested after asOf."
+    },
+    "availability": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["AVAILABLE", "STALE", "MISSING", "UNAVAILABLE", "BLOCKED_BY_RIGHTS"],
+          "description": "AVAILABLE: data present at asOf. STALE: older than the freshness window. MISSING: no observation for the target/time. UNAVAILABLE: source unreachable. BLOCKED_BY_RIGHTS: fail-closed rights gate (authorization must be DENIED)."
+        },
+        "detail": { "type": "string", "minLength": 1 }
+      },
+      "required": ["state", "detail"],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "sourceName": { "type": "string", "minLength": 1 },
+        "evidenceRefs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Opaque evidence references (e.g. observation-id@revision strings) backing the response."
+        },
+        "license": { "type": "string", "minLength": 1 },
+        "rightsState": {
+          "type": "string",
+          "enum": ["REVIEW", "CLEAR"],
+          "description": "Fail-closed: sources stay REVIEW until counsel + CEO GO; only an independent rights registry may set CLEAR."
+        },
+        "authorization": {
+          "type": "object",
+          "properties": {
+            "outcome": {
+              "type": "string",
+              "enum": ["ALLOWED", "DENIED"],
+              "description": "Whether THIS response is authorized for exposure. DENIED iff availability.state is BLOCKED_BY_RIGHTS."
+            },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["outcome", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["sourceId", "sourceName", "evidenceRefs", "license", "rightsState", "authorization"],
+      "additionalProperties": false
+    },
+    "classification": {
+      "type": "string",
+      "enum": ["SYNTHETIC", "LIVE"],
+      "description": "SYNTHETIC: fixture/prototype data. LIVE: real-world observations. Never left implicit."
+    },
+    "signals": {
+      "type": "array",
+      "description": "Derived and raw signals. Absent metrics belong in gaps, never as zero-valued signals.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "examples": ["crop_weather_stress", "crop_weather:minimum_temperature", "place_subscore"]
+          },
+          "value": { "type": "number", "description": "Finite number; unit-dependent range." },
+          "unit": { "type": "string", "minLength": 1 },
+          "derived": { "type": "boolean", "description": "true when computed from other observations." },
+          "observedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO8601 timestamp of this signal's observation. Point-in-time (per-signal): must not follow the response asOf."
+          }
+        },
+        "required": ["id", "type", "value", "unit", "derived", "observedAt"],
+        "additionalProperties": false
+      }
+    },
+    "riskIndex": {
+      "type": "object",
+      "description": "Composite risk index over the signals. It is a heuristic index or a calibrated forecast — never presented as a loss probability, price change, or trading recommendation.",
+      "properties": {
+        "value": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1,
+          "description": "null when no index was computed (non-AVAILABLE states, or un-scored responses)."
+        },
+        "calibrationState": {
+          "type": "string",
+          "enum": ["UNCALIBRATED", "CALIBRATED"],
+          "description": "CALIBRATED requires a genuine residual-backed calibration, not merely an importable ML library. Producers must only emit CALIBRATED with residual evidence; the canonical bridges enforce a closed calibration-descriptor set and reject unknown/malformed calibration metadata fail-closed."
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "semantics": {
+          "type": "string",
+          "enum": ["heuristic", "calibrated_forecast"],
+          "description": "Must agree with calibrationState: CALIBRATED iff calibrated_forecast."
+        }
+      },
+      "required": ["value", "calibrationState", "confidence", "semantics"],
+      "additionalProperties": false
+    },
+    "hypotheses": {
+      "type": "array",
+      "description": "Unverified downstream consequences. Never presented as verified.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "statement": { "type": "string", "minLength": 1 },
+          "verified": { "const": false, "description": "Always false in v1; verification is a future, separately-gated capability." },
+          "impact": { "type": "string", "minLength": 1, "description": "Impacted sector/domain of the hypothesis." }
+        },
+        "required": ["id", "statement", "verified", "impact"],
+        "additionalProperties": false
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Missing-data annotations, e.g. \"missing: precipitation\". A missing value never becomes a measured zero."
+    }
+  },
+  "required": [
+    "contractVersion",
+    "target",
+    "observedAt",
+    "ingestedAt",
+    "asOf",
+    "availability",
+    "provenance",
+    "classification",
+    "signals",
+    "riskIndex",
+    "hypotheses",
+    "gaps"
+  ],
+  "additionalProperties": false
+}

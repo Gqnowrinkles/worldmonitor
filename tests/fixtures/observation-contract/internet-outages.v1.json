@@ -1,0 +1,43 @@
+{
+  "_seed": {
+    "fetchedAt": 1795123200000,
+    "recordCount": 2,
+    "sourceVersion": "cloudflare-radar-28d",
+    "schemaVersion": 1,
+    "state": "OK"
+  },
+  "data": {
+    "outages": [
+      {
+        "id": "cf-8f4c2b1e-9d3a-4c67-a2f1-5e6b8c0d1a2b",
+        "title": "REGIONAL outage in Brazil",
+        "link": "https://radar.cloudflare.com/outage-center",
+        "description": "Cloudflare detected a regional outage in Brazil.",
+        "detectedAt": 1795036800000,
+        "country": "Brazil",
+        "region": "",
+        "location": { "latitude": -14.24, "longitude": -51.93 },
+        "severity": "OUTAGE_SEVERITY_MAJOR",
+        "categories": ["Cloudflare Radar", "FIBER_CUT", "REGIONAL"],
+        "cause": "FIBER_CUT",
+        "outageType": "REGIONAL",
+        "endedAt": 1795080000000
+      },
+      {
+        "id": "cf-2c91f7d4-4b0e-4f8a-9d62-7a1e5c3b8f10",
+        "title": "NATIONWIDE outage in Gabon",
+        "link": "https://radar.cloudflare.com/outage-center",
+        "description": "Cloudflare detected a nationwide internet disruption in Gabon.",
+        "detectedAt": 1794864000000,
+        "country": "Gabon",
+        "region": "",
+        "location": { "latitude": -0.80, "longitude": 11.61 },
+        "severity": "OUTAGE_SEVERITY_TOTAL",
+        "categories": ["Cloudflare Radar", "NATIONWIDE"],
+        "cause": "",
+        "outageType": "NATIONWIDE",
+        "endedAt": 0
+      }
+    ]
+  }
+}

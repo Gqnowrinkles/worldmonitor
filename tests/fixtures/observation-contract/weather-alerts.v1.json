@@ -1,0 +1,148 @@
+{
+  "_seed": {
+    "fetchedAt": 1795200522283,
+    "recordCount": 50,
+    "sourceVersion": "nws+eccc+swic-v1",
+    "schemaVersion": 1,
+    "state": "OK"
+  },
+  "data": {
+    "alerts": [
+      {
+        "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.1ac12ece2faa1f8da02fb1e765806a5aefedff52.001.1",
+        "event": "Special Marine Warning",
+        "severity": "Severe",
+        "headline": "Special Marine Warning issued November 20 at 1:34PM EST until November 20 at 2:30PM EST by NWS Jacksonville FL",
+        "description": "SMWJAX\n\nThe National Weather Service in Jacksonville has issued a\n\n* Special Marine Warning for...\nWaters from Fernandina Beach to St. Augustine FL from 20 to 60\nNM...\nWaters from St. Augustine to Flagler Beach FL from 20 to 60 NM...\n\n* Until 230 PM EST.\n\n* At 134 PM EST, a severe thunderstorm capable of producing\nwaterspouts was located 38 nm east of Daytona Beach Shores, or 39\nnm east of South D",
+        "areaDesc": "Waters from Fernandina Beach to St. Augustine FL from 20 to 60 NM; Waters from St. Augustine to Flagler Beach FL from 20 to 60 NM",
+        "onset": "2026-11-20T13:34:00-05:00",
+        "expires": "2026-11-20T14:30:00-05:00",
+        "coordinates": [
+          [
+            -80.75,
+            29.48
+          ],
+          [
+            -80.94,
+            29.93
+          ],
+          [
+            -80.99,
+            30.1
+          ],
+          [
+            -80.3,
+            30.14
+          ],
+          [
+            -80.27,
+            30.02
+          ],
+          [
+            -80.1,
+            29.65
+          ],
+          [
+            -79.98,
+            29.47
+          ],
+          [
+            -80.75,
+            29.48
+          ]
+        ],
+        "centroid": [
+          -80.47571428571429,
+          29.827142857142857
+        ],
+        "countryCode": "US",
+        "source": "nws",
+        "vtec": "/O.NEW.KJAX.MA.W.0265.261120T1834Z-261120T1930Z/"
+      },
+      {
+        "id": "837465351006006164202611200519_fea1-2480",
+        "event": "wind warning",
+        "severity": "Moderate",
+        "headline": "wind warning — Paulatuk",
+        "description": "Damaging winds are expected.\n\nWinds from the south will strengthen today and tonight. The strongest winds are expected near midnight with gusts of 90 km/h. Winds will diminish on Saturday.\nThe strong winds will likely cause poor visibility in blowing snow at times.\n\nSecure loose objects. Prepare for possible disruptions to transportation, services, and utilities.\n\nPlease continue to monitor alerts",
+        "areaDesc": "Paulatuk, NT",
+        "onset": "2026-11-21T04:00:00.000Z",
+        "expires": "2026-11-21T04:18:32.626Z",
+        "coordinates": [
+          [
+            -123.48303,
+            69.30105
+          ],
+          [
+            -123.4711,
+            69.37987
+          ],
+          [
+            -123.5454,
+            69.4616
+          ],
+          [
+            -123.92841,
+            69.56735
+          ],
+          [
+            -124.24104,
+            69.56076
+          ],
+          [
+            -124.44821,
+            69.52598
+          ],
+          [
+            -124.69333,
+            69.37952
+          ],
+          [
+            -124.57053,
+            69.21899
+          ],
+          [
+            -124.15558,
+            69.13507
+          ],
+          [
+            -123.73109,
+            69.17258
+          ],
+          [
+            -123.48303,
+            69.30105
+          ]
+        ],
+        "centroid": [
+          -124.02677200000001,
+          69.37027700000002
+        ],
+        "countryCode": "CA",
+        "source": "eccc"
+      },
+      {
+        "id": "2.49.0.0.170.1.CO.261120160002.RPgemaYTtzzmetFGPq28",
+        "event": "Landslide warning",
+        "severity": "Extreme",
+        "headline": "CAP Alert",
+        "description": "CAP Alert",
+        "areaDesc": "Antioquia (Gómez Plata), Caldas (Samaná), Cauca (Argelia, El Tambo, Guapi, López De Micay, Timbiquí), Chocó (Nóvita, Río Iró, Tadó), Cundinamarca (Guaduas, La Vega, Nilo, San Francisco), Huila (Rivera), Nariño (Barbacoas, El Charco, La Llanada, Los Andes, Magüí, Ricaurte, San Andrés De Tumaco, San Bernardo, San Pablo, Santa Bárbara), Quindío (Salento), Santander (Albania, Coromoro), Tolima (Ataco), Valle Del Cauca (Buenaventura)",
+        "onset": "2026-11-20T16:00:02.000Z",
+        "expires": "2026-11-21T16:00:00.000Z",
+        "coordinates": [],
+        "centroid": [
+          -74.297333,
+          4.570868
+        ],
+        "countryCode": "CO",
+        "source": "swic",
+        "geometryPrecision": "country",
+        "urgency": "Future",
+        "certainty": "Likely",
+        "authority": "Instituto de Hidrología, Meteorología y Estudios Ambientales",
+        "memberId": "057"
+      }
+    ]
+  }
+}

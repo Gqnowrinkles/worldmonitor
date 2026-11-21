@@ -25,6 +25,10 @@ COPY . .
 # Output is api/**/*.js alongside the source .ts files.
 # Must run BEFORE source-attribution --write because the compiled bundles land
 # in api/ and the scanner (SOURCE_ROOTS includes 'api') picks up URLs from them.
+# Generated inventory modules are intentionally untracked; recreate them in
+# the clean image context before handler bundling imports them.
+RUN node scripts/generate-inventory-facts.mjs
+
 RUN node docker/build-handlers.mjs
 
 # Regenerate source-attribution manifest against the fully-built source tree
@@ -32,12 +36,9 @@ RUN node docker/build-handlers.mjs
 # manifest from being stale when build-crawlable-corpus validates it.
 RUN node scripts/source-attribution.mjs --write
 
-# Generate inventory facts (reads the freshly-written manifest)
-RUN node scripts/generate-inventory-facts.mjs
-
 # Build the crawlable static corpus and Vite frontend (outputs to dist/)
 # Skip blog build — blog-site has its own deps not installed here
-RUN npm run build:crawlable-corpus && npm run build:content-corpus && npx tsc && npx vite build
+RUN npm run build:crawlable-corpus && npm run build:sitemap && npm run build:pro && npx tsc && npx vite build
 
 # ── Stage 2: Runtime dependencies ───────────────────────────────────────────
 FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd AS runtime-deps
@@ -86,6 +87,8 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Nginx + supervisord configs
 COPY docker/nginx.conf /etc/nginx/nginx.conf.template
 COPY docker/supervisord.conf /etc/supervisor/conf.d/worldmonitor.conf
+COPY docker/render-nginx-realip.mjs /app/render-nginx-realip.mjs
+COPY docker/validate-session-secret.mjs /app/validate-session-secret.mjs
 COPY docker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
